@@ -17,7 +17,6 @@ Project({
     "chat:write",
     "chat:write.public",
     "users:read",
-    "files:write",
   ],
   functions: [SuperChat],
   workflows: [PostSuperChat],
