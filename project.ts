@@ -1,10 +1,12 @@
 import { Project } from "slack-cloud-sdk/mod.ts";
 import { PostSuperChatShortCut } from "./triggers/post_superchat_shortcut.ts";
+import { CheckSuperchatHistoryShortCut } from "./triggers/check_superchat_history.ts";
 import { PostSuperChat } from "./workflows/post_superchat.ts";
+import { CheckSuperChat } from "./workflows/check_superchat.ts";
 import { SuperChat } from "./functions/superchat.ts";
-// import the Reversals table and include it in the `tables` array
-// below to store data via the Tables API
-// import { Reversals } from "./tables/reversals.ts";
+import { StoreSuperChat } from "./functions/store_superchat.ts";
+import { GetSuperChatHistory } from "./functions/get_superchat_history.ts";
+import { SuperChats } from "./tables/super_chats.ts";
 
 Project({
   name: "superchat",
@@ -18,9 +20,9 @@ Project({
     "chat:write.public",
     "users:read",
   ],
-  functions: [SuperChat],
-  workflows: [PostSuperChat],
-  triggers: [PostSuperChatShortCut],
-  tables: [],
+  functions: [SuperChat, StoreSuperChat, GetSuperChatHistory],
+  workflows: [PostSuperChat, CheckSuperChat],
+  triggers: [PostSuperChatShortCut, CheckSuperchatHistoryShortCut],
+  tables: [SuperChats],
   outgoingDomains: [],
 });

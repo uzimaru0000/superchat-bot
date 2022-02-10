@@ -1,5 +1,6 @@
 import { DefineWorkflow, Schema } from "slack-cloud-sdk/mod.ts";
 import { SuperChat } from "../functions/superchat.ts";
+import { StoreSuperChat } from "../functions/store_superchat.ts";
 
 export const PostSuperChat = DefineWorkflow("post_superchat", {
   title: "Post SuperChat",
@@ -34,5 +35,10 @@ const genSuperChat = PostSuperChat.addStep(SuperChat, {
 
 PostSuperChat.addStep(Schema.slack.functions.SendMessage, {
   channel_id: PostSuperChat.inputs.channel,
-  message: genSuperChat.outputs.imgUrl,
+  message: genSuperChat.outputs.message,
+});
+
+PostSuperChat.addStep(StoreSuperChat, {
+  user: PostSuperChat.inputs.user,
+  price: PostSuperChat.inputs.price,
 });

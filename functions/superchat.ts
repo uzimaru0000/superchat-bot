@@ -1,5 +1,4 @@
 import { DefineFunction, Schema } from "slack-cloud-sdk/mod.ts";
-import { encode } from "https://deno.land/std@0.125.0/encoding/base64.ts";
 
 type User = {
   profile: {
@@ -38,11 +37,10 @@ export const SuperChat = DefineFunction(
       },
     },
     output_parameters: {
-      required: ["imgUrl"],
+      required: ["message"],
       properties: {
-        imgUrl: {
+        message: {
           type: Schema.types.string,
-          description: "image urls",
         },
       },
     },
@@ -73,7 +71,9 @@ export const SuperChat = DefineFunction(
 
     return {
       outputs: {
-        imgUrl: `https://superchat-img.vercel.app/super-chat?${query}`,
+        message: `<https://superchat-img.vercel.app/super-chat?${query}|${
+          decodeURIComponent(name)
+        }さんがスーパーチャットしました>`,
       },
     };
   },

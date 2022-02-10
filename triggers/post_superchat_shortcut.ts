@@ -10,4 +10,7 @@ export const PostSuperChatShortCut = DefineTrigger("post_superchat_shortcut", {
   .withInputs((ctx) => ({
     channel: ctx.data.channel_id,
     user: ctx.data.user_id,
-  }));
+  }))
+  .environment("prod", (trigger) => {
+    trigger.availableToChannel("C01PDB8FVHD");
+  });
