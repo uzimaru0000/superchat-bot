@@ -1,4 +1,6 @@
-import { DefineFunction, Schema } from "slack-cloud-sdk/mod.ts";
+import type { SlackFunctionHandler } from "deno-slack-sdk/types.ts";
+import { SlackAPI } from "deno-slack-api/mod.ts";
+import type { SuperChatFunction } from "../manifest.ts";
 
 type User = {
   profile: {
@@ -12,47 +14,40 @@ const qs = (obj: { [key: string]: string | undefined }) =>
     val !== undefined ? [`${key}=${decodeURIComponent(val)}`] : []
   ).join("&");
 
-export const SuperChat = DefineFunction(
-  "superchat",
-  {
-    title: "SuperChat",
-    description: "Post SuperChat!!",
-    input_parameters: {
-      required: ["price", "user", "channel"],
-      properties: {
-        price: {
-          type: Schema.types.number,
-          description: "Price of SuperChat",
-        },
-        message: {
-          type: Schema.types.string,
-          description: "SuperChat message",
-        },
-        user: {
-          type: Schema.slack.types.user_id,
-        },
-        channel: {
-          type: Schema.slack.types.channel_id,
-        },
-      },
-    },
-    output_parameters: {
-      required: ["message"],
-      properties: {
-        message: {
-          type: Schema.types.string,
-        },
-      },
-    },
-  },
-  async ({ inputs, client }) => {
-    const res = await client.call("users.info", {
+const getSuperChatImg = async (
+  name: string,
+  icon: string,
+  price: number,
+  message?: string,
+) => {
+  const query = qs({
+    name,
+    icon,
+    price: price.toString(),
+    message,
+  });
+
+  const res = await fetch(
+    `https://superchat-img.vercel.app/super-chat?${query}`,
+  );
+  const blob = await res.blob();
+
+  return blob;
+};
+
+const superChat: SlackFunctionHandler<typeof SuperChatFunction.definition> =
+  async ({ inputs, env, token }) => {
+    const client = SlackAPI(token, {});
+
+    const res = await client.users.info({
       user: inputs.user,
       pretty: 1,
     });
 
     if (!res.ok) {
-      return { imgUrl: "error" };
+      return {
+        error: res.error ?? "",
+      };
     }
 
     const user = res.user as User;
@@ -62,19 +57,28 @@ export const SuperChat = DefineFunction(
     const price = inputs.price;
     const message = inputs.message;
 
-    const query = qs({
-      name,
-      icon,
-      price: price.toString(),
-      message,
+    const file = await getSuperChatImg(name, icon, price, message);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("filename", `￥${price}`);
+    formData.append("channels", inputs.channel);
+    formData.append(
+      "initial_comment",
+      `${decodeURIComponent(name)}さんがスーパーチャットしました`,
+    );
+
+    await fetch(`${env.SLACK_API_URL}files.upload`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+      body: formData,
     });
 
     return {
-      outputs: {
-        message: `<https://superchat-img.vercel.app/super-chat?${query}|${
-          decodeURIComponent(name)
-        }さんがスーパーチャットしました>`,
-      },
+      outputs: {},
     };
-  },
-);
+  };
+
+export default superChat;
